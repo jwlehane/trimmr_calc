@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trimmr Services & Estimator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+        }
+        .input-field {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 14px;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        .btn-primary {
+            background-color: #6366f1;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-primary:hover {
+            background-color: #4f46e5;
+        }
+        .service-item {
+            display: flex;
+            align-items: flex-start; /* Align items to the top to accommodate nested structure */
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+            position: relative; /* Needed for absolute positioning of subtotal */
+        }
+        .service-item .main-checkbox-label-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-grow: 1; /* Allow main label to take available space */
+        }
+        .service-item input[type="checkbox"] {
+            margin-right: 10px;
+            min-width: 20px;
+            min-height: 20px;
+            margin-top: 4px; /* Adjust alignment for checkbox */
+        }
+        .service-item input[type="number"] {
+            max-width: 80px;
+            padding: 8px 10px;
+        }
+        .service-item .labor-inputs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center; /* Align input fields and labels */
+        }
+        .service-item .labor-inputs label {
+            font-size: 0.85em;
+            color: #555;
+            flex-basis: 100%; /* Ensure label takes full width above input on small screens */
+            text-align: left; /* Align label text left */
+            margin-bottom: 2px;
+        }
+        .service-item .labor-input-group {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Allow each group to grow */
+            min-width: 90px; /* Ensure enough space for input and label */
+        }
+        .service-item .sub-items {
+            margin-left: 30px; /* Indent sub-items */
+            margin-top: 8px;
+            width: calc(100% - 30px); /* Adjust width for indentation */
+            border-left: 2px solid #e5e7eb; /* Visual indicator for sub-items */
+            padding-left: 10px;
+        }
+        .sub-item-checkbox {
+            min-width: 16px; /* Smaller checkbox for sub-items */
+            min-height: 16px;
+            margin-right: 8px;
+        }
+        .sub-item-label {
+            font-size: 0.95em; /* Slightly smaller text for sub-items */
+            color: #555;
+        }
+        .manual-cost-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        .manual-cost-input-group label {
+            font-size: 0.85em;
+            color: #555;
+        }
+        .manual-labor-inputs-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: flex-end; /* Align inputs and labels */
+        }
+        .manual-labor-inputs-wrapper .input-group {
+            flex-grow: 1;
+            min-width: 100px;
+        }
+        .manual-labor-inputs-wrapper .input-group label {
+            display: block;
+            font-size: 0.85em;
+            color: #555;
+            margin-bottom: 2px;
+        }
+        .service-subtotal {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px dashed #e5e7eb;
+            font-weight: 600;
+            color: #4b5563;
+        }
+        .discount-section {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            margin-top: 2rem;
+        }
+        .discount-inputs {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .discount-inputs .input-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        @media (max-width: 768px) {
+            .service-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .service-item .main-checkbox-label-wrapper {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            .service-item .labor-inputs {
+                width: 100%; /* Ensure labor inputs take full width */
+                justify-content: flex-start;
+            }
+            .service-item .labor-input-group {
+                min-width: unset; /* Remove min-width for mobile */
+                flex-basis: auto; /* Let content dictate width */
+            }
+            .service-item .sub-items {
+                margin-left: 0;
+                width: 100%;
+            }
+            .manual-labor-inputs-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            .manual-labor-inputs-wrapper .input-group {
+                width: 100%;
+                min-width: unset;
+            }
+            .discount-inputs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="container mx-auto space-y-8">
+
+        <!-- Header and Trimmr Link -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Trimmr Services Overview</h1>
+            <p class="text-lg text-gray-600">Explore our solutions and get instant estimates.</p>
+            <a href="https://www.trimmr.com" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-semibold mt-4 inline-block">Visit Trimmr.com</a>
+        </header>
+
+        <!-- Services Summary Section -->
+        <section class="card mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Our Core Solutions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700">
+                <div>
+                    <h3 class="font-bold text-lg mb-2 text-indigo-700">Mobile Processing</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Dual Mobius Trimming (Full/Half Day)</li>
+                        <li>Hash Trailer (Weekly/3-Day)</li>
+                        <li>Pre-roll/Production/Packaging</li>
+                        <li>MBX Bucker Rental</li>
+                        <li>Sorter</li>
+                        <li>Generators (10KW, 20KW)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2 text-indigo-700">Workforce Solutions</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>ASO Labor (per hour)</li>
+                        <li>Temp Labor (per hour)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2 text-indigo-700">Brand Activation</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Dispensary Relationship Maintenance</li>
+                        <li>Brand Kit Fee</li>
+                        <li>Popups (3hr, 6hr)</li>
+                        <li>Shopper Intel Visits</li>
+                        <li>Demand Generation Visits</li>
+                        <li>Display Detailing/Budtender Education</li>
+                        <li>Brand Sales Rep (Commission)</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-6">
+                *Note: A 12-month subscription offers a 20% discount on applicable services.
+            </p>
+        </section>
+
+        <!-- Service Estimator -->
+        <section class="card">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Service Cost Estimator</h2>
+
+            <div id="serviceList" class="space-y-3 mb-6">
+                <!-- Services will be populated here by JavaScript -->
+            </div>
+            
+            <!-- Discounts Section -->
+            <div class="discount-section">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3">Discounts</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    *Note: A 12-month subscription offers a 20% discount on applicable services.
+                </p>
+                <div class="discount-inputs">
+                    <div class="input-group">
+                        <label for="percentDiscount" class="block text-sm font-medium text-gray-700 mb-2">Percentage Discount (%):</label>
+                        <input type="number" id="percentDiscount" placeholder="0" min="0" max="100" value="0" class="input-field" oninput="calculateTotalEstimate()">
+                    </div>
+                    <div class="input-group">
+                        <label for="dollarDiscount" class="block text-sm font-medium text-gray-700 mb-2">Dollar Amount Discount ($):</label>
+                        <input type="number" id="dollarDiscount" placeholder="0.00" min="0" value="0.00" step="0.01" class="input-field" oninput="calculateTotalEstimate()">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="calculateTotalEstimate()" class="btn-primary w-full mt-6 mb-6">Calculate Total Estimate</button>
+            <p class="text-2xl font-bold text-gray-800">Total Estimated Cost: <span id="totalEstimate">$0.00</span></p>
+        </section>
+    </div>
+
+    <script>
+        // Define service costs and types
+        const serviceCosts = {
+            "Dual Mobius Trimming Trailer (Full Day)": {
+                type: 'main_service',
+                base: 4500, // Solution Cost
+                components: {
+                    "Sanitization": 350, // Once per rental
+                    "20 KW Generator": 180,
+                },
+                notes: "Solution + Optional Add-ons",
+                defaultLaborRate: 33,
+                defaultCrew: 2, // Example default crew size
+                hoursPerDay: 10,
+                deliveryType: "mobius",
+                infeedId: "buckedInfeedLbs",
+                costPerUnitFn: "calculateMobiusTrimmingCostPerLb",
+                costPerUnitLabel: "Trimming Cost / lb (Bucked)",
+            },
+            "Dual Mobius Trimming Trailer (Half Day)": {
+                type: 'main_service',
+                base: 2500, // Solution Cost
+                components: {
+                    "Sanitization": 350,
+                    "20 KW Generator": 180,
+                },
+                notes: "Solution + Optional Add-ons",
+                defaultLaborRate: 33,
+                defaultCrew: 2,
+                hoursPerDay: 10,
+                deliveryType: "mobius",
+                infeedId: "buckedInfeedLbs",
+                costPerUnitFn: "calculateMobiusTrimmingCostPerLb",
+                costPerUnitLabel: "Trimming Cost / lb (Bucked)",
+            },
+            "Hash Trailer (Weekly)": {
+                type: 'main_service',
+                base: 10000, // Solution Cost
+                components: {
+                    "Sanitization": 350,
+                    "10 KW Generator": 100,
+                },
+                notes: "Solution + Optional Add-ons",
+                defaultLaborRate: 33,
+                defaultCrew: 1, // Example default crew size
+                hoursPerDay: 9, // Hash trailer shift length
+                deliveryType: "hash",
+                infeedId: "trimInfeedLbs",
+                costPerUnitFn: "calculateHashCostPerKg",
+                costPerUnitLabel: "Hash Material Cost / kg (Outfeed)",
+            },
+            "Hash Trailer (3 Day)": {
+                type: 'main_service',
+                base: 7500, // Solution Cost
+                components: {
+                    "Sanitization": 350,
+                    "10 KW Generator": 100,
+                },
+                notes: "Solution + Optional Add-ons",
+                defaultLaborRate: 33,
+                defaultCrew: 1,
+                hoursPerDay: 9,
+                deliveryType: "hash",
+                infeedId: "trimInfeedLbs",
+                costPerUnitFn: "calculateHashCostPerKg",
+                costPerUnitLabel: "Hash Material Cost / kg (Outfeed)",
+            },
+            "Pre-roll/Production/Packaging Trailer": {
+                type: 'main_service',
+                base: 1500, // Solution Cost
+                components: {
+                    "10 KW Generator": 100,
+                },
+                notes: "Solution + Optional Add-ons",
+                defaultLaborRate: 33,
+                defaultCrew: 3, // Example default crew size
+                hoursPerDay: 10, // Pre-roll shift length
+                deliveryType: "preroll",
+                infeedId: "preRollUnitsInfeed",
+                costPerUnitFn: "calculatePreRollCostPerUnit",
+                costPerUnitLabel: "Pre-roll Cost / Unit",
+            },
+            "MBX Bucker Rental": { type: 'fixed', base: 400, sanitization: 150, notes: "Equipment + Sanitization" },
+            "Sorter": { type: 'fixed', base: 400, sanitization: 150, notes: "Equipment + Sanitization" },
+            "ASO Labor": { type: 'labor', markup: 0.23, notes: "Base Wage, Hours, Days" },
+            "Temp Labor": { type: 'labor', notes: "Hourly Rate, Hours, Days" },
+            "Dispensary Relationship Maintenance (per Quarter)": { type: 'fixed', base: 500, notes: "Quarterly Fee" },
+            "Brand Kit Fee": { type: 'fixed', base: 585, notes: "Per Kit" },
+            "3 Hour Popup": { type: 'fixed', base: 195, notes: "Flat Rate" },
+            "6 Hour Popup": { type: 'fixed', base: 345, notes: "Flat Rate" },
+            "Shopper Intel Visits (10 shoppers)": { type: 'fixed', base: 500, notes: "Flat Rate" },
+            "Demand Generation Visits (10 visits)": { type: 'fixed', base: 500, notes: "Flat Rate" },
+            "Display Detailing/Budtender Education": { type: 'fixed', base: 100, notes: "Flat Rate" },
+        };
+
+        // Function to calculate and display subtotal for a labor item (for ASO/Temp Labor)
+        function updateLaborSubtotal(serviceName) {
+            const serviceData = serviceCosts[serviceName];
+            const baseId = `${serviceName.replace(/\s+/g, '-')}`;
+            const rateInput = document.getElementById(`${baseId}-rate`);
+            const hoursInput = document.getElementById(`${baseId}-hours`);
+            const daysInput = document.getElementById(`${baseId}-days`);
+            const subtotalSpan = document.getElementById(`${baseId}-subtotal`);
+
+            const rate = parseFloat(rateInput.value) || 0;
+            const hours = parseInt(hoursInput.value) || 0;
+            const days = parseInt(daysInput.value) || 0;
+
+            let subtotal = 0;
+            if (serviceData.type === 'labor') {
+                if (serviceName === "ASO Labor") {
+                    subtotal = rate * (1 + serviceData.markup) * hours * days;
+                } else if (serviceName === "Temp Labor") {
+                    subtotal = rate * hours * days;
+                }
+            }
+            subtotalSpan.textContent = `$${subtotal.toFixed(2)}`;
+        }
+
+        // Function to populate the service list dynamically
+        function populateServiceList() {
+            const serviceListDiv = document.getElementById('serviceList');
+            for (const serviceName in serviceCosts) {
+                const item = serviceCosts[serviceName];
+                const serviceItemDiv = document.createElement('div');
+                serviceItemDiv.className = 'service-item bg-gray-50 p-3 rounded-md border border-gray-200';
+                const safeServiceName = serviceName.replace(/\s+/g, '-');
+
+                let inputHtml = '';
+                let notesDisplay = item.notes || 'unit';
+
+                if (item.type === 'fixed') {
+                    const totalCost = (item.base || 0) + (item.equipment || 0) + (item.sanitization || 0);
+                    inputHtml = `
+                        <span class="text-gray-600 text-sm italic mr-2">($${totalCost.toFixed(2)} / ${notesDisplay})</span>
+                        <input type="number" id="${safeServiceName}-qty" value="1" min="1" class="input-field text-center" data-cost="${totalCost}">
+                    `;
+                } else if (item.type === 'labor') {
+                    inputHtml = `
+                        <div class="labor-inputs flex-grow">
+                            <div class="labor-input-group">
+                                <label for="${safeServiceName}-rate">Rate:</label>
+                                <input type="number" id="${safeServiceName}-rate" placeholder="Rate" value="0" min="0" class="input-field text-center" oninput="updateLaborSubtotal('${serviceName}')">
+                            </div>
+                            <div class="labor-input-group">
+                                <label for="${safeServiceName}-hours">Hours/Day:</label>
+                                <input type="number" id="${safeServiceName}-hours" placeholder="Hours/Day" value="0" min="0" class="input-field text-center" oninput="updateLaborSubtotal('${serviceName}')">
+                            </div>
+                            <div class="labor-input-group">
+                                <label for="${safeServiceName}-days">Days:</label>
+                                <input type="number" id="${safeServiceName}-days" placeholder="Days" value="0" min="0" class="input-field text-center" oninput="updateLaborSubtotal('${serviceName}')">
+                            </div>
+                        </div>
+                        <span id="${safeServiceName}-subtotal" class="text-gray-600 font-medium whitespace-nowrap">$0.00</span>
+                    `;
+                } else if (item.type === 'main_service') {
+                    const displayCost = item.base;
+                    inputHtml = `
+                        <span class="text-gray-600 text-sm italic mr-2">($${displayCost.toFixed(2)} Base / ${notesDisplay})</span>
+                        <div class="input-group">
+                            <label for="${safeServiceName}-qty">Rental Days:</label>
+                            <input type="number" id="${safeServiceName}-qty" value="1" min="1" class="input-field text-center" oninput="calculateSpecificServiceCost('${serviceName}')">
+                        </div>
+                    `;
+                    inputHtml += `<div class="sub-items w-full" id="${safeServiceName}-subitems">`;
+
+                    // Trailer Specific Delivery Miles & Subtotal
+                    inputHtml += `
+                        <div class="manual-cost-input-group">
+                            <label for="${safeServiceName}-miles">One-Way Miles (for trailer delivery):</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="${safeServiceName}-miles" placeholder="0" min="0" value="0" class="input-field" oninput="calculateSpecificServiceCost('${serviceName}')">
+                                <span class="text-gray-600 text-sm">($4/mile x 2)</span>
+                                <span id="${safeServiceName}-delivery-subtotal" class="font-medium whitespace-nowrap">$0.00</span>
+                            </div>
+                        </div>
+                    `;
+
+                    // Infeed input specific to this trailer type
+                    inputHtml += `
+                        <div class="manual-cost-input-group">
+                            <label for="${safeServiceName}-infeed">Total ${item.infeedId.includes('bucked') ? 'lbs Bucked Cannabis' : item.infeedId.includes('trim') ? 'lbs Trim' : 'Units Pre-roll'} Infeed:</label>
+                            <input type="number" id="${safeServiceName}-infeed" placeholder="0" min="0" value="0" class="input-field" oninput="calculateSpecificServiceCost('${serviceName}')">
+                        </div>
+                    `;
+
+                    // Manual Labor Cost
+                    inputHtml += `
+                        <div class="manual-cost-input-group">
+                            <label>Manual Labor Cost (per rental period):</label>
+                            <div class="manual-labor-inputs-wrapper">
+                                <div class="input-group">
+                                    <label for="${safeServiceName}-labor-rate">Rate (per hour):</label>
+                                    <input type="number" id="${safeServiceName}-labor-rate" placeholder="33.00" min="0" value="${item.defaultLaborRate || 33}" step="0.01" class="input-field" oninput="calculateSpecificServiceCost('${serviceName}')">
+                                </div>
+                                <div class="input-group">
+                                    <label for="${safeServiceName}-crew">Number of Crew:</label>
+                                    <input type="number" id="${safeServiceName}-crew" placeholder="1" min="0" value="${item.defaultCrew || 1}" class="input-field" oninput="calculateSpecificServiceCost('${serviceName}')">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Pre-roll specific cost per stick input
+                    if (serviceName.includes("Pre-roll")) {
+                         inputHtml += `
+                            <div class="manual-cost-input-group">
+                                <label for="preRollCostPerStick">Cost Per Stick (Manual):</label>
+                                <input type="number" id="preRollCostPerStick" placeholder="0.60" min="0" value="0.60" step="0.01" class="input-field" oninput="calculateSpecificServiceCost('${serviceName}')">
+                            </div>
+                        `;
+                    }
+
+
+                    // Components
+                    for (const componentName in item.components) {
+                        const componentCost = item.components[componentName];
+                        const safeComponentName = componentName.replace(/\s+/g, '-');
+                        inputHtml += `
+                            <div class="flex items-center mt-2">
+                                <input type="checkbox" id="${safeServiceName}-${safeComponentName}-component" class="sub-item-checkbox" data-cost="${componentCost}" onchange="calculateSpecificServiceCost('${serviceName}')">
+                                <label for="${safeServiceName}-${safeComponentName}-component" class="sub-item-label flex-1">${componentName} ($${componentCost.toFixed(2)})</label>
+                            </div>
+                        `;
+                    }
+
+                    inputHtml += `</div>`; // Close sub-items
+
+                    // Subtotal and Calculate Button for this specific service
+                    inputHtml += `
+                        <div class="w-full text-center mt-4">
+                            <button onclick="calculateSpecificServiceCost('${serviceName}')" class="btn-primary w-full sm:w-auto mb-3">Calculate ${serviceName.replace(' Trailer', '').replace('(Full Day)', '').replace('(Half Day)', '').replace('(Weekly)', '').replace('(3 Day)', '')} Cost</button>
+                            <p class="text-lg font-medium text-gray-800 service-subtotal">Subtotal for ${serviceName}: <span id="${safeServiceName}-subtotal">$0.00</span></p>
+                        </div>
+                    `;
+
+                    // Cost Per Unit Calculation Section
+                    inputHtml += `
+                        <div class="cost-per-unit-calc w-full mt-4 p-3 bg-indigo-50 rounded-md">
+                            <h3 class="text-md font-semibold text-indigo-800 mb-2">${item.costPerUnitLabel}</h3>
+                            <p class="text-lg font-medium text-gray-800">
+                                <span id="${safeServiceName}-costPerUnit">$0.00</span>
+                            </p>
+                            ${serviceName.includes("Hash") ? '<p class="text-sm text-gray-500 mt-1">*Assumes a 3% hash yield (3 kg hash outfeed per 100 lbs trim infeed).</p>' : ''}
+                        </div>
+                    `;
+                }
+
+                serviceItemDiv.innerHTML = `
+                    <div class="main-checkbox-label-wrapper">
+                        <input type="checkbox" id="${safeServiceName}" onchange="calculateSpecificServiceCost('${serviceName}')">
+                        <label for="${safeServiceName}" class="text-gray-800 font-medium">${serviceName}</label>
+                    </div>
+                    ${inputHtml}
+                `;
+                serviceListDiv.appendChild(serviceItemDiv);
+            }
+        }
+
+        // Call the function to populate on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            populateServiceList();
+            // Initial calculation for labor fields and cost per units
+            for (const serviceName in serviceCosts) {
+                if (serviceCosts[serviceName].type === 'labor') {
+                    updateLaborSubtotal(serviceName);
+                } else if (serviceCosts[serviceName].type === 'main_service') {
+                    // Initial calculation for main services to set default subtotals/costs
+                    calculateSpecificServiceCost(serviceName);
+                }
+            }
+            // No general delivery to calculate anymore
+        });
+
+
+        // Calculate Total Service Estimate (grand total)
+        function calculateTotalEstimate() {
+            let total = 0;
+
+            // Iterate over all services to calculate based on type
+            for (const serviceName in serviceCosts) {
+                const safeServiceName = serviceName.replace(/\s+/g, '-');
+                const checkbox = document.getElementById(safeServiceName);
+
+                if (checkbox && checkbox.checked) {
+                    const item = serviceCosts[serviceName];
+
+                    if (item.type === 'fixed') {
+                        const quantityInput = document.getElementById(`${safeServiceName}-qty`);
+                        const quantity = parseInt(quantityInput.value) || 1;
+                        const cost = parseFloat(quantityInput.dataset.cost);
+                        total += cost * quantity;
+                    } else if (item.type === 'labor') {
+                        const rateInput = document.getElementById(`${safeServiceName}-rate`);
+                        const hoursInput = document.getElementById(`${safeServiceName}-hours`);
+                        const daysInput = document.getElementById(`${safeServiceName}-days`);
+
+                        const rate = parseFloat(rateInput.value) || 0;
+                        const hours = parseInt(hoursInput.value) || 0;
+                        const days = parseInt(daysInput.value) || 0;
+
+                        let laborCost = 0;
+                        if (serviceName === "ASO Labor") {
+                            laborCost = rate * (1 + serviceCosts[serviceName].markup) * hours * days;
+                        } else if (serviceName === "Temp Labor") {
+                            laborCost = rate * hours * days;
+                        }
+                        total += laborCost;
+                    } else if (item.type === 'main_service') {
+                        // For main services, read their pre-calculated subtotal
+                        const subtotalSpan = document.getElementById(`${safeServiceName}-subtotal`);
+                        const serviceSubtotal = parseFloat(subtotalSpan.textContent.replace('$', '')) || 0;
+                        total += serviceSubtotal;
+                    }
+                }
+            }
+
+            // Apply discounts
+            const percentDiscountInput = document.getElementById('percentDiscount');
+            const dollarDiscountInput = document.getElementById('dollarDiscount');
+
+            let percentDiscount = parseFloat(percentDiscountInput.value) || 0;
+            let dollarDiscount = parseFloat(dollarDiscountInput.value) || 0;
+
+            // Apply dollar discount first, then percentage
+            total = total - dollarDiscount;
+            total = total * (1 - (percentDiscount / 100));
+
+            // Ensure total doesn't go below zero
+            if (total < 0) {
+                total = 0;
+            }
+
+            document.getElementById('totalEstimate').textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Calculate specific service total and its cost per unit
+        function calculateSpecificServiceCost(serviceName) {
+            const item = serviceCosts[serviceName];
+            const safeServiceName = serviceName.replace(/\s+/g, '-');
+            const subtotalSpan = document.getElementById(`${safeServiceName}-subtotal`);
+            const costPerUnitSpan = document.getElementById(`${safeServiceName}-costPerUnit`);
+            const deliverySubtotalSpan = document.getElementById(`${safeServiceName}-delivery-subtotal`);
+
+            // If the main service checkbox is not checked, reset values and return
+            const mainCheckbox = document.getElementById(safeServiceName);
+            if (!mainCheckbox || !mainCheckbox.checked) {
+                subtotalSpan.textContent = `$0.00`;
+                costPerUnitSpan.textContent = `$0.00`;
+                deliverySubtotalSpan.textContent = `$0.00`; // Reset delivery subtotal too
+                return;
+            }
+
+            const rentalDaysInput = document.getElementById(`${safeServiceName}-qty`);
+            const rentalDays = parseInt(rentalDaysInput?.value) || 1;
+
+            let currentServiceTotal = item.base * rentalDays;
+
+            // Add costs of selected components
+            for (const componentName in item.components) {
+                const safeComponentName = componentName.replace(/\s+/g, '-');
+                const componentCheckbox = document.getElementById(`${safeServiceName}-${safeComponentName}-component`);
+                if (componentCheckbox && componentCheckbox.checked) {
+                    const componentCost = parseFloat(componentCheckbox.dataset.cost);
+                    currentServiceTotal += componentCost * rentalDays; // Components are once per rental
+                }
+            }
+
+            // Add trailer specific delivery cost
+            const milesInput = document.getElementById(`${safeServiceName}-miles`);
+            const oneWayMiles = parseFloat(milesInput?.value) || 0;
+            const deliveryCost = oneWayMiles * 4 * 2;
+            currentServiceTotal += deliveryCost;
+            deliverySubtotalSpan.textContent = `$${deliveryCost.toFixed(2)}`; // Update delivery subtotal display
+
+            // Calculate and add manual labor cost for the main service
+            const laborRateInput = document.getElementById(`${safeServiceName}-labor-rate`);
+            const crewInput = document.getElementById(`${safeServiceName}-crew`);
+            
+            const laborRate = parseFloat(laborRateInput?.value) || 0;
+            const crew = parseInt(crewInput?.value) || 0;
+
+            const manualLaborCost = (rentalDays * item.hoursPerDay * crew * laborRate);
+            currentServiceTotal += manualLaborCost;
+
+            // Update service-specific subtotal
+            subtotalSpan.textContent = `$${currentServiceTotal.toFixed(2)}`;
+
+            // Calculate and update cost per unit
+            let costPerUnit = 0;
+            const infeedElement = document.getElementById(`${safeServiceName}-infeed`); // Get infeed element by service-specific ID
+            const infeedValue = infeedElement ? (parseFloat(infeedElement.value) || 0) : 0;
+
+            if (infeedValue > 0) {
+                if (item.costPerUnitFn === "calculateMobiusTrimmingCostPerLb") {
+                    costPerUnit = currentServiceTotal / infeedValue;
+                } else if (item.costPerUnitFn === "calculateHashCostPerKg") {
+                    const HASH_YIELD_PER_100LBS_TRIM_KG = 3;
+                    let hashOutfeedKg = (infeedValue / 100) * HASH_YIELD_PER_100LBS_TRIM_KG;
+                    if (hashOutfeedKg > 0) {
+                        costPerUnit = currentServiceTotal / hashOutfeedKg;
+                    }
+                } else if (item.costPerUnitFn === "calculatePreRollCostPerUnit") {
+                    const preRollCostPerStickInput = document.getElementById('preRollCostPerStick');
+                    const preRollCostPerStick = parseFloat(preRollCostPerStickInput?.value) || 0.60;
+                    
+                    let totalCostForPreRollUnitCalc = currentServiceTotal + (infeedValue * preRollCostPerStick);
+                    if (infeedValue > 0) {
+                        costPerUnit = totalCostForPreRollUnitCalc / infeedValue;
+                    }
+                }
+            }
+            costPerUnitSpan.textContent = `$${costPerUnit.toFixed(2)}`;
+        }
+    </script>
+</body>
+</html>
